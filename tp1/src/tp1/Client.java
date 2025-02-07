@@ -146,5 +146,6 @@ public class Client {
 		c.seDeconnecter();
 		
 	}
+	//TODO voir si le git marche avec la config d'eclispe sur la fac
 
 }
