@@ -15,7 +15,7 @@ public class Serveur {
 	private DataInputStream entree;
 	private DataOutputStream sortie;
 	
-
+	
 	public Serveur() {
 		try {
 			this.servSocket = new ServerSocket(Serveur.PORT);
