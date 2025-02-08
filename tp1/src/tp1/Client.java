@@ -1,8 +1,13 @@
 package tp1;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -79,7 +84,6 @@ public class Client {
 		}
 		
 		System.out.println("C : Fermeture des fluxs et de la socket");
-		System.exit(0);
 	}
 	
 	public void lireManuel() {
@@ -99,8 +103,9 @@ public class Client {
 	
 	public void uploader(String nomFichier) {
 		String cheminRecu = null;
-		long tailleFichier = 0;
-		//Envoi du nom du fichier
+		int tailleFichier = 0;
+		boolean ok_reponse = false;
+		//Envoi du nom du fichier avec PUT
 		try {
 			this.sortie.writeUTF("PUT:"+nomFichier);
 		} catch (IOException e) {
@@ -109,7 +114,111 @@ public class Client {
 			System.exit(0);
 		}
 		System.out.println("C : envoie du nom du fichier réussi");
-		//Récupération du nom de la copie
+		
+		
+		//Récupération d'un entier, 1 ça baigne, on envoie le nombre de fichier, 0 quitte
+		try {
+			ok_reponse = this.entree.readBoolean();
+		} catch (IOException e) {
+			System.out.println("C : ERREUR lors de la lecture dans le flux");
+			e.printStackTrace();
+			System.exit(0);
+		}
+		
+		if (!(ok_reponse)) {
+			//Le client se déconnecte = on termine la fonction et on fait le seDéconnecter juste après l'appel de la fonction
+			return;
+		}
+		
+		System.out.println("C : On ouvre le fichier pour envoyer sa taille : "+nomFichier);
+		//Ouverture du fichier pour l'envoie de sa taille
+		File fichier = new File(nomFichier);
+		if (!(fichier.exists())) {
+			System.err.println("C : ERREUR le fichier n'existe pas");
+			this.seDeconnecter();
+			System.exit(0);
+		}
+		else if (!(fichier.canRead())) {
+			System.err.println("C : ERREUR le fichier ne possède pas le droit en écriture");
+			this.seDeconnecter();
+			System.exit(0);
+		}
+		else if (!(fichier.isFile())) {
+			System.err.println("C : ERREUR le fichier n'est pas un fichier");
+			this.seDeconnecter();
+			System.exit(0);
+		}
+		
+		tailleFichier = (int)(fichier.length());
+		System.out.println("C : Taille du fichier : "+tailleFichier);
+		
+		System.out.println("C : On envoie la taille du fichier : "+tailleFichier);
+		//Envoie de la taille du fichier
+		try {
+			this.sortie.writeInt(tailleFichier);
+		} catch (IOException e) {
+			System.out.println("C : ERREUR lors de l'ecriture dans le flux");
+			e.printStackTrace();
+			System.exit(0);
+		}
+		
+		System.out.println("C : On attends la confirmation");
+		//Lecture de la confirmation et demande du contenu du fichier
+		try {
+			ok_reponse = this.entree.readBoolean();
+		} catch (IOException e) {
+			System.out.println("C : ERREUR lors de la lecture dans le flux");
+			e.printStackTrace();
+			System.exit(0);
+		}
+		
+		if (!(ok_reponse)) {
+			return;
+		}
+		
+		
+		//Envoi progressif des octets du serveur
+		System.out.println("C : Ouverture du fichier à envoyer");
+		//Ouverture du fichier
+		FileInputStream fis = null;
+		try {
+			fis = new FileInputStream(fichier);
+		} catch (FileNotFoundException e) {
+			System.out.println("C : ERREUR lors de l'ouverture du fichier");
+			e.printStackTrace();
+			System.exit(0);
+		}
+		BufferedInputStream bis = new BufferedInputStream(fis);
+		
+		//écriture dans le flux de sortie
+		System.out.println("C : Envoi des octets du fichier");
+		byte[] tab = new byte[1024];
+		int n;
+		try {
+			while ((n = bis.read(tab)) > 0) {
+				this.sortie.write(tab, 0, n);
+			}
+		}
+		catch (IOException e) {
+			System.out.println("C : ERREUR lors de la lecture et écriture dans les fichiers");
+			e.printStackTrace();
+			System.exit(0);
+		}
+		
+		
+		//Fermeture
+		System.out.println("C : On ferme les flux");
+		try {
+			fis.close();
+		} catch (IOException e) {
+			System.out.println("C : ERREUR lors de la fermeture des Streams");
+			e.printStackTrace();
+			System.exit(0);
+		}
+		
+		
+		
+		//Attente de la réception du nom de la copie du fichier sur le serveur
 		try {
 			cheminRecu = this.entree.readUTF();
 		} catch (IOException e) {
@@ -117,25 +226,10 @@ public class Client {
 			e.printStackTrace();
 			System.exit(0);
 		}
-		
 		System.out.println("C : réception du chemin réussi : "+cheminRecu);
 		
-		File fichier = new File(cheminRecu);
-		if (!(fichier.exists())) {
-			System.err.println("C : ERREUR le fichier n'existe pas");
-			this.seDeconnecter();
-		}
-		else if (!(fichier.canRead())) {
-			System.err.println("C : ERREUR le fichier ne possède pas le droit en écriture");
-			this.seDeconnecter();
-		}
-		else if (!(fichier.isFile())) {
-			System.err.println("C : ERREUR le fichier n'est pas un fichier");
-			this.seDeconnecter();
-		}
+		//Se déconnecte après l'appel de cette fonction dans le main
 		
-		tailleFichier = fichier.length();
-		System.out.println("C : Fichier reçu : taille "+tailleFichier);
 		
 	}
 	
@@ -143,9 +237,9 @@ public class Client {
 		Client c = new Client("127.0.0.1", 2121);
 		c.initierConnexion();
 		c.lireManuel();
+		c.uploader(CHEMIN_CLIENT+"toucan.jpg");
 		c.seDeconnecter();
 		
 	}
-	//TODO voir si le git marche avec la config d'eclispe sur la fac
 
 }
