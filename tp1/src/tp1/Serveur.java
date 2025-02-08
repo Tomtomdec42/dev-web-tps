@@ -9,6 +9,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class Serveur {
 	
@@ -136,8 +138,12 @@ public class Serveur {
 		System.out.println("S : On demande le contenu du fichier");
 		
 		//Construire le nom du fichier
-		String tab[] = nomFichierClient.split("/");
-		nomFichierCopie = CHEMIN_SERVEUR+tab[tab.length-1];
+		LocalDateTime date = java.time.LocalDateTime.now();
+		String sdate = date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd_H:m:s"));
+		System.out.println(nomFichierClient);
+		String tab[] = nomFichierClient.split("[.]"); //c'est une expression régulière donc le . veut dire nimporte quoi donc il reste plus rien : donc mettre [] pour dire explicitement le .
+		nomFichierCopie = CHEMIN_SERVEUR+sdate+"."+tab[tab.length-1];
+
 		
 		System.out.println("S : On construit le nom de la copie et on lit le fichier");
 		//Ouvrir le fichier résultat de la copie
