@@ -203,8 +203,7 @@ public class Serveur {
 	}
 	public void gererDownload(String nomFichierServeur) {
 		//Pour l'instant le nom contient le chemin d'accès, à voir si on le laisse
-		
-		File fichier = new File(nomFichierServeur);
+		File fichier = new File(CHEMIN_SERVEUR+nomFichierServeur);
 		if (fichier.exists() && fichier.isDirectory() == false && fichier.canRead()) {
 			System.out.println("S : Ok j'envoie le nombre d'octets du fichier");
 			try {
@@ -225,7 +224,6 @@ public class Serveur {
 			}
 			
 		}
-		
 		//Envoie du nombre d'octets du fichier
 		try {
 			this.sortie.writeInt((int)fichier.length());
@@ -238,7 +236,7 @@ public class Serveur {
 		FileInputStream fis = null;
 		//ouverture des flux du fichier
 		try {
-			fis = new FileInputStream(nomFichierServeur);
+			fis = new FileInputStream(CHEMIN_SERVEUR+nomFichierServeur);
 		} catch (FileNotFoundException e) {
 			System.out.println("S : ERREUR lors de l'ouverture du fichier");
 			e.printStackTrace();

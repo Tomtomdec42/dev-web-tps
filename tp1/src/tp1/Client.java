@@ -280,8 +280,7 @@ public class Client {
 			//Ouverture du fichier
 			FileOutputStream fos = null;
 			try {
-				String[] tab = nomFichierServeur.split("/");
-				fos = new FileOutputStream(CHEMIN_CLIENT+tab[tab.length-1]);
+				fos = new FileOutputStream(CHEMIN_CLIENT+nomFichierServeur);
 			} catch (FileNotFoundException e) {
 				System.out.println("C : ERREUR lors de l'ouverture du fichier");
 				e.printStackTrace();
@@ -329,7 +328,7 @@ public class Client {
 		c.initierConnexion();
 		c.lireManuel();
 		//c.uploader(CHEMIN_CLIENT+"toucan.jpg");
-		c.downloader(CHEMIN_SERVEUR+"tigre.jpg");
+		c.downloader("tigre.jpg");
 		c.seDeconnecter();
 		
 	}
