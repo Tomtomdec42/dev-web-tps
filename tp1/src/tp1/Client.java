@@ -11,14 +11,12 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
 public class Client {
 
 	private static final String CHEMIN_CLIENT = "./src/tp1/FichiersClient/";
-	private static final String CHEMIN_SERVEUR = "./src/tp1/FichiersServeur/";
 
 	private String hote;
 	private int port;
