@@ -270,6 +270,37 @@ public class Serveur {
 		
 	}
 	
+	public void gererList(String extension) {
+		File dossier = new File(CHEMIN_SERVEUR);
+		File listeFichiers[] = dossier.listFiles();
+		boolean all = extension.compareTo("all") == 0;
+		int i;
+		
+		System.out.println("S : On envoie les fichier se terminant par "+extension);
+		for (i = 0; i < listeFichiers.length; i++) {
+			if (all || listeFichiers[i].getName().endsWith(extension)) {
+				try {
+					this.sortie.writeUTF(listeFichiers[i].getName());
+				} catch (IOException e) {
+					System.out.println("C : ERREUR lors de l'écriture dans le fichier");
+					e.printStackTrace();
+					System.exit(0);
+				}
+			}
+		}
+		
+		//Envoie de fin
+		try {
+			this.sortie.writeUTF("fin");
+		} catch (IOException e) {
+			System.out.println("C : ERREUR lors de l'écriture dans le fichier");
+			e.printStackTrace();
+			System.exit(0);
+		}
+		
+		
+	}
+	
 	public void lireCommande() {
 		String commande = null;
 		String tokens[] = null;
@@ -289,6 +320,10 @@ public class Serveur {
 			System.out.println("S : Commande GET reçue : "+commande);
 			gererDownload(tokens[1]);
 		}
+		else if (tokens[0].compareTo("LIST") == 0) {
+			System.out.println("S : Commande LIST reçue : "+commande);
+			gererList(tokens[1]);
+		}
 		else {
 			this.deconnecteClient();
 			//Envoie au client qu'il doit se déconnecter
@@ -296,7 +331,6 @@ public class Serveur {
 	}
 	
 
-	
 	public void ecouter() {
 		for (;;) {
 			

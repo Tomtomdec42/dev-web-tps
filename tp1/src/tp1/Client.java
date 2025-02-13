@@ -2,13 +2,16 @@ package tp1;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.BufferedWriter;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
@@ -323,12 +326,65 @@ public class Client {
 		}
 	}
 	
+	public void lister(String extension) {
+		String nomFichier = null;
+		//Envoie de la commande lister au serveur
+		System.out.println("On envoie : LIST:"+extension);
+		try {
+			this.sortie.writeUTF("LIST:"+extension);
+		} catch (IOException e) {
+			System.err.println("C : ERREUR lors de l'écriture dans le flux");
+			e.printStackTrace();
+			System.exit(0);
+		}
+		
+		
+		//Ouverture du fichier de listing
+		FileWriter fw = null;
+		try {
+			fw = new FileWriter(new File(CHEMIN_CLIENT+"listing_"+extension+".txt"));
+		} catch (IOException e) {
+			System.err.println("C : ERREUR lors de l'ouverture du fichier");
+			e.printStackTrace();
+			System.exit(0);
+		}
+		BufferedWriter br = new BufferedWriter(fw);
+		
+		
+		//On lit petit à petit jusqu'à trouver fin
+		try {
+			while ((nomFichier = this.entree.readUTF()).compareTo("fin") != 0) {
+				br.write(nomFichier);
+				br.newLine();
+				br.flush();
+			}
+		} catch (IOException e) {
+			System.out.println("C : ERREUR lors de la lecture dans le flux");
+			e.printStackTrace();
+			System.exit(0);
+		}
+		
+		try {
+			br.close();
+			fw.close();
+		} catch (IOException e) {
+			System.out.println("C : ERREUR lors de la fermeture du fichier");
+			e.printStackTrace();
+			System.exit(0);
+		}
+		
+		System.out.println("Fichiers envoyés, déconnexion");
+		this.seDeconnecter();
+		
+	}
+	
 	public static void main(String[] args) {
 		Client c = new Client("127.0.0.1", 2121);
 		c.initierConnexion();
 		c.lireManuel();
 		//c.uploader(CHEMIN_CLIENT+"toucan.jpg");
-		c.downloader("tigre.jpg");
+		//c.downloader("tigre.jpg");
+		c.lister("txt");
 		c.seDeconnecter();
 		
 	}
