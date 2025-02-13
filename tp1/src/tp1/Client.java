@@ -15,6 +15,8 @@ import java.net.UnknownHostException;
 public class Client {
 
 	private static final String CHEMIN_CLIENT = "./src/tp1/FichiersClient/";
+	private static final String CHEMIN_SERVEUR = "./src/tp1/FichiersServeur/";
+
 	private String hote;
 	private int port;
 	private Socket cliSocket;
@@ -233,11 +235,101 @@ public class Client {
 		
 	}
 	
+	public void downloader(String nomFichierServeur) {
+		int nbOctets = 0;
+		int i;
+		byte b = 0;
+		String reponse = null;
+		//Envoie de la commande GET
+		try {
+			System.out.println("C : Envoie de la commande GET:"+nomFichierServeur);
+			this.sortie.writeUTF("GET:"+nomFichierServeur);
+		} catch (IOException e) {
+			System.err.println("C : ERREUR lors de l'écriture dans le flux de sortie");
+			e.printStackTrace();
+			System.exit(0);
+		}
+		
+		//Réception de la réponse du serveur
+		try {
+			reponse = this.entree.readUTF();
+		} catch (IOException e) {
+			System.err.println("C : ERREUR lors de la lecture dans le flux de sortie");
+			e.printStackTrace();
+			System.exit(0);
+		}
+		System.out.println("C : "+reponse);
+		
+		if (reponse.split(":")[0].compareTo("ERREUR") == 0) {
+			System.out.println("C : déconnexion");
+			this.seDeconnecter();
+		}
+		else {
+			
+			//Réception du nombre d'octets à télécharger
+			System.out.println("C : Lecture du nombre d'octets");
+			try {
+				nbOctets = this.entree.readInt();
+				System.out.println("C : Nombre d'octets : "+nbOctets);
+			} catch (IOException e) {
+				System.err.println("C : ERREUR lors de la lecture dans le flux");
+				e.printStackTrace();
+				System.exit(0);
+			}
+			
+			//Ouverture du fichier
+			FileOutputStream fos = null;
+			try {
+				String[] tab = nomFichierServeur.split("/");
+				fos = new FileOutputStream(CHEMIN_CLIENT+tab[tab.length-1]);
+			} catch (FileNotFoundException e) {
+				System.out.println("C : ERREUR lors de l'ouverture du fichier");
+				e.printStackTrace();
+				System.exit(0);
+			}
+			BufferedOutputStream bos = new BufferedOutputStream(fos);
+			
+			//Réception du serveur des octets du fichier
+			System.out.println("C : Réception des octets du fichier");
+			for (i = 0; i < nbOctets; i++) {
+				try {
+					b = this.entree.readByte();
+				} catch (IOException e) {
+					System.err.println("C : ERREUR lors de la lecture dans le flux");
+					e.printStackTrace();
+					System.exit(0);
+				}
+				
+				try {
+					bos.write(b);
+					bos.flush();
+				} catch (IOException e) {
+					System.err.println("C : ERREUR lors de l'écriture dans le flux");
+					e.printStackTrace();
+					System.exit(0);
+				}
+			}
+			
+			System.out.println("C : Réception du fichier ok, déconnexion");
+			try {
+				bos.close();
+				fos.close();
+			} catch (IOException e) {
+				System.out.println("C : ERREUR lors de la fermeture des flux");
+				e.printStackTrace();
+			}
+			
+			this.seDeconnecter();
+
+		}
+	}
+	
 	public static void main(String[] args) {
 		Client c = new Client("127.0.0.1", 2121);
 		c.initierConnexion();
 		c.lireManuel();
-		c.uploader(CHEMIN_CLIENT+"toucan.jpg");
+		//c.uploader(CHEMIN_CLIENT+"toucan.jpg");
+		c.downloader(CHEMIN_SERVEUR+"tigre.jpg");
 		c.seDeconnecter();
 		
 	}

@@ -1,9 +1,11 @@
 package tp1;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -199,6 +201,76 @@ public class Serveur {
 		this.deconnecteClient();
 
 	}
+	public void gererDownload(String nomFichierServeur) {
+		//Pour l'instant le nom contient le chemin d'accès, à voir si on le laisse
+		
+		File fichier = new File(nomFichierServeur);
+		if (fichier.exists() && fichier.isDirectory() == false && fichier.canRead()) {
+			System.out.println("S : Ok j'envoie le nombre d'octets du fichier");
+			try {
+				this.sortie.writeUTF("OK: J'envoie le nombre d'octets du fichier");
+			} catch (IOException e) {
+				System.out.println("S : ERREUR lors de l'écriture dans le flux");
+				e.printStackTrace();
+				System.exit(0);;			}
+		}
+		else {
+			System.err.println("S : ERREUR Le fichier demandé n'existe pas");
+			try {
+				this.sortie.writeUTF("ERREUR:Le fichier demandé n'existe pas");
+			} catch (IOException e) {
+				System.out.println("S : ERREUR lors de l'écriture dans le flux");
+				e.printStackTrace();
+				System.exit(0);;
+			}
+			
+		}
+		
+		//Envoie du nombre d'octets du fichier
+		try {
+			this.sortie.writeInt((int)fichier.length());
+		} catch (IOException e) {
+			System.out.println("S : ERREUR lors de l'écriture dans le flux");
+			e.printStackTrace();
+			System.exit(0);;
+		}
+		
+		FileInputStream fis = null;
+		//ouverture des flux du fichier
+		try {
+			fis = new FileInputStream(nomFichierServeur);
+		} catch (FileNotFoundException e) {
+			System.out.println("S : ERREUR lors de l'ouverture du fichier");
+			e.printStackTrace();
+			System.exit(0);
+		}
+		BufferedInputStream bis = new BufferedInputStream(fis);
+		
+		//Envoie des octets du fichier
+		System.out.println("Envoie des octets du fichier");
+		byte[] tab = new byte[1024];
+		int n;
+		try {
+			while ((n = bis.read(tab)) > 0) {
+				this.sortie.write(tab, 0, n);
+			}
+		}
+		catch (IOException e) {
+			System.out.println("C : ERREUR lors de la lecture et écriture dans les fichiers");
+			e.printStackTrace();
+			System.exit(0);
+		}
+		
+		try {
+			bis.close();
+			fis.close();
+		} catch (IOException e) {
+			System.out.println("C : ERREUR lors de la fermeture des Streams");
+			e.printStackTrace();
+			System.exit(0);
+		}
+		
+	}
 	
 	public void lireCommande() {
 		String commande = null;
@@ -215,11 +287,18 @@ public class Serveur {
 			System.out.println("S : Commande PUT reçue : "+commande);
 			gererUpload(tokens[1]);
 		}
+		else if (tokens[0].compareTo("GET") == 0) {
+			System.out.println("S : Commande GET reçue : "+commande);
+			gererDownload(tokens[1]);
+		}
 		else {
 			this.deconnecteClient();
 			//Envoie au client qu'il doit se déconnecter
 		}
 	}
+	
+
+	
 	public void ecouter() {
 		for (;;) {
 			
