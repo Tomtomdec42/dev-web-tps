@@ -120,6 +120,18 @@ public class Parking implements Runnable{
 		tv2.start();
 		tv3.start();
 		
+		try {
+			tv1.join();
+			tv2.join();
+			tv3.join();
+			
+			tp.interrupt();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		
 	
 	}
 }
