@@ -28,6 +28,7 @@ public class Parking implements Runnable{
 		return (this.capacite == this.voituresGarees.size());
 	}
 	public synchronized boolean existeVoitureEnAttente() {
+		//System.out.println(this.fileAttente.isEmpty());
 		return (!(this.fileAttente.isEmpty()));
 	}
 	
@@ -45,7 +46,7 @@ public class Parking implements Runnable{
 		
 		this.chiffreAffaire += this.tarifHoraire*v.getDureeStationnement()/1000;
 		
-		Thread.currentThread().notifyAll();
+		notifyAll();
 	}
 	
 	public synchronized void garerVoiture() {
@@ -53,7 +54,7 @@ public class Parking implements Runnable{
 		try {
 			if (this.estPlein()) {
 				System.out.println("Le parking est plein.");
-				Thread.currentThread().wait();
+				wait();
 			}
 		}
 		catch (InterruptedException e) {
@@ -72,14 +73,53 @@ public class Parking implements Runnable{
 		System.out.println("La voiture "+v.getImmatriculation()+" est garée en place "+v.getNumPlace());
 		v.setStatut(Voiture.GAREE);
 	}
+
+
+
+	public void run() {
+		while (!(Thread.currentThread().isInterrupted())) {
+			Thread.interrupted();
+			//System.out.println("On attends ");
+			if (this.existeVoitureEnAttente()) {
+				System.out.println("On gare la voiture");
+				this.garerVoiture();
+			}
+		}
+		System.out.println("Le chiffre d'affaires total réalisé est de "+this.chiffreAffaire);
+		
+	}
 	
 	
 	public static void main(String[] args) {
+		Parking p = new Parking(2, 10);
+			
+		// temps de stationnement, patience
+		Voiture v1 = new Voiture("V1", 2000, 1000, p);
+		Voiture v2 = new Voiture("V2", 2000, 1000, p);
+		Voiture v3 = new Voiture("V3", 1000, 5000, p);
 
-	}
-
-	public void run() {
+		Thread tp = new Thread(p);
+		Thread tv1 = new Thread(v1);
+		Thread tv2 = new Thread(v2);
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		Thread tv3 = new Thread(v3);
 		
+		tp.start();
+		
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		tv1.start();
+		tv2.start();
+		tv3.start();
+		
+	
 	}
-
 }
